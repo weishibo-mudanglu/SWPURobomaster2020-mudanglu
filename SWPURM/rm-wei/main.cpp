@@ -31,10 +31,10 @@ int main()
     class imgProduceProcessing imgPromachine(Arrmor,video);
 
 #if muiltThread
-//    thread myMultiThread1(&imgProduceProcessing::ImageProducing,ref(imgPromachine));
-//    thread myMultiThread2(&imgProduceProcessing::ImageProcessing,ref(imgPromachine));
+   thread myMultiThread1(&imgProduceProcessing::ImageProducing,ref(imgPromachine));
+   thread myMultiThread2(&imgProduceProcessing::ImageProcessing,ref(imgPromachine));
     thread myMultiThread3(&algorithm::serial_read,ref(algorithms));//串口接收线程
-//    thread myMultiThread4(&algorithm::dataprocessing,ref(algorithms));//串口发送线程
+    thread myMultiThread4(&algorithm::dataprocessing,ref(algorithms));//串口发送线程
 
 //    myMultiThread1.join();
 //    myMultiThread2.join();

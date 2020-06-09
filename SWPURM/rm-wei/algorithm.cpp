@@ -26,6 +26,7 @@ float maghrib_pixel(float p1,float p2,float p3,float p4)
 //像素差值转化为角度值
 float maghrib_angle(float erro,int a)
 {
+    
     float angle_erro;
     //x方向角度计算
     if(a == 1)
@@ -49,7 +50,7 @@ float BulletModel(float x, float v, float angle)
   return y;//返回计算出的实际高度
 }
 
-float GetPitch(float x,  float v) //
+float GetPitch(float x,  float v) //函数只需要判断击打目标在某一个距离上，然后计算在该距离下的重力补偿值角度，其余角度差由pid计算产生
 {
   float y_temp = 0.0;
   float y_actual, dy;
@@ -59,9 +60,8 @@ float GetPitch(float x,  float v) //
   {
     a = (float) atan2(y_temp, x);//返回夹角
     y_actual = BulletModel(x, v, a);//得到能打击的实际高度
-    dy = y - y_actual;
-    y_temp = y_temp + dy;
-    if (fabs(dy) < 0.001)
+    y_temp = y_temp - y_actual;
+    if (fabs(y_actual) < 0.001)
     {
       break;
     }
@@ -71,32 +71,40 @@ float GetPitch(float x,  float v) //
 
 }
 
-float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)
+float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)//a用来标记计算x方向还是y方向的误差
 {
+    float Camera_Big_gone   = 0.0;//安装位置摄像头和大枪管水平角度差
+    float Camera_Small_gone = 0.0;//安装位置摄像头和小枪管水平角度差
     if(a==1)
-    {
+    {   //对于YAW轴来说，只需要对准在中心线上，并不需要计算额外误差，所以只需要画幅角度差，还有安装位置角度差
         float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
         float angle_erro = maghrib_angle(pixel_erro,a);
-        x_err = angle_erro;
-        float incrementSpeed = x_Kp*(x_err - x_err_next) + x_Ki*x_err + x_Kd*(x_err - 2 * x_err_next + x_err_last);
+        if(GONEID==0x00)
+        {
+            x_err = angle_erro+Camera_Big_gone;
+        }
+        else
+        {
+            x_err = angle_erro+Camera_Small_gone;
+        }
+        float incrementangle = x_Kp*(x_err - x_err_next) + x_Ki*x_err + x_Kd*(x_err - 2 * x_err_next + x_err_last);
         x_err_last = x_err_next;
         x_err_next = x_err;
-        //cout<<"进入x_pid算法:"<<incrementSpeed<<endl;
-        return incrementSpeed;
+        //cout<<"进入x_pid算法,计算得到目标到摄像头中心的Picth角度差:"<<incrementSpeed<<endl;
+        return incrementangle;
     }
     else
-    {
+    {   //相对于YAW轴，PICTH轴的误差应该由两个部分构成，除了画幅角度差，还应该包括重力补偿角
         float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
         float angle_erro = maghrib_angle(pixel_erro,a);
-        y_err = angle_erro;
-        float incrementSpeed = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
+        y_err = angle_erro+gravity();
+        float incrementangle = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
         y_err_last = y_err_next;
         y_err_next = y_err;
-        //cout<<"进入y_pid算法:"<<incrementSpeed<<endl;
-        return incrementSpeed;
+        //cout<<"进入y_pid算法且计算得到目标到摄像头中心的Yaw轴角度差:"<<incrementSpeed<<endl;
+        
+        return incrementangle;
     }
-
-
 }
 //pidcontral& pidcontral::operator =(const pidcontral& another)
 //{
@@ -119,7 +127,7 @@ void pidcontral::PID_init()
 }
 algorithm::algorithm()
 {
-
+    std::cout<<"运行了algorithm的无参构造函数"<<std::endl;
 }
 
 algorithm::algorithm(const serial& b,const pidcontral &c,const pidcontral &d)
@@ -152,7 +160,7 @@ void algorithm::get_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float h
     lock_2.unlock();
 }
 //让运算可能用到的值一次性全部加载，防止线程中断占据大量时间
-void algorithm::load_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float high)
+void algorithm::load_Point(Point2f& p1, Point2f& p2, Point2f& p3, Point2f& p4,float& high)
 {
     lock_2.lock();
     p1 = my_arrmorPoint[0];
@@ -236,18 +244,36 @@ void algorithm::serial_translate()
 
 void algorithm::serial_send()
 {
+    CI YAW_angle,PICTH_angle;
+    unsigned char date[9];
+    YAW_angle.num  = xangle;
+    PICTH_angle.num= yangle;
+    date[0] = YAW_angle.st[0];
+    date[1] = YAW_angle.st[1];
+    date[2] = YAW_angle.st[2];
+    date[3] = YAW_angle.st[3];
+    date[4] = PICTH_angle.st[0];
+    date[5] = PICTH_angle.st[1];
+    date[6] = PICTH_angle.st[2];
+    date[7] = PICTH_angle.st[3];
+    if(xangle<=1&&yangle<=1)
+    {
+        date[8] = 0x00;
+    }
+    else
+    {
+        date[8] = 0x01;
+    }
+    
 
 }
-void algorithm::PID()
-{
-    xangle=xpid.PID_realize(my_arrmorPoint[0].x,my_arrmorPoint[1].x,my_arrmorPoint[2].x,my_arrmorPoint[3].x,1);
-    yangle=ypid.PID_realize(my_arrmorPoint[0].y,my_arrmorPoint[1].y,my_arrmorPoint[2].y,my_arrmorPoint[3].y,2);
-}
 
-void algorithm::gravity()
-{
+
+float algorithm::gravity()
+{   //由于目标和摄像头的距离也可能在实时的发生改变，所以为了提高射击的准确度，有必要对距离也做预测
     switch(GONEID)
     {
+        
         case 0x00:
             return GetPitch(distance,Big_speed);
             break;
@@ -267,15 +293,19 @@ void algorithm::dataprocessing()
     while(1)
     {
         Point2f p1,p2,p3,p4;
-        float high;
+        float high;//灯条高度用于距离解算
         serial_translate();//翻译串口数据
         if(SYMBOL==true)
         {
-            load_Point(p1,p2,p3,p4,high);
+            load_Point(&p1,&p2,&p3,&p4,&high);//从图像处理线程加载装甲板位置信息和灯条长度信息
+            ranging(high);
+            xangle = PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
+            yangle = PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
+            serial_send()
         }
         else
         {
-
+            
         }
         ranging(high);
         gravity();

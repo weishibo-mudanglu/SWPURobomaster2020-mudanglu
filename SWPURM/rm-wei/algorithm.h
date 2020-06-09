@@ -33,11 +33,10 @@ public:
 
     void load_Point(Point2f p1,Point2f p2,Point2f p3,Point2f p4,float high);
 
-    void PID();//pid控制量计算
 
     void ranging(float high);//测距
 
-    void gravity();//重力补偿
+    float gravity();//重力补偿
 
     bool colorjudge();//判断自瞄颜色
 
@@ -55,7 +54,7 @@ private:
     cv::Point2f my_arrmorPoint[4];
     serial usbtty;
     unsigned char reversebff[9];
-    float distance;
+    float distance,light_high;
     pidcontral xpid;
     pidcontral ypid;
     float xangle,yangle;
