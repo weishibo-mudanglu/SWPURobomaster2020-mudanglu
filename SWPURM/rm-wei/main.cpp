@@ -17,7 +17,7 @@ using namespace cv;
 bool waitAndBreak(void);
 int main()
 {
-    class camera video("red1.avi");
+    class camera video("0");
     char d[]={"/dev/ttyUSB0"};
     class serial usbtty(d,115200,8,1,'n');
     usbtty.serialInit();
@@ -36,10 +36,10 @@ int main()
     thread myMultiThread3(&algorithm::serial_read,ref(algorithms));//串口接收线程
     thread myMultiThread4(&algorithm::dataprocessing,ref(algorithms));//串口发送线程
 
-//    myMultiThread1.join();
-//    myMultiThread2.join();
+    myMultiThread1.join();
+    myMultiThread2.join();
     myMultiThread3.join();
-//    myMultiThread4.join();
+    myMultiThread4.join();
 
 #else
     while(true)

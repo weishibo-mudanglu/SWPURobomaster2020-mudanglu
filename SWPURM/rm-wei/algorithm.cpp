@@ -79,14 +79,15 @@ float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)//a用�
     {   //对于YAW轴来说，只需要对准在中心线上，并不需要计算额外误差，所以只需要画幅角度差，还有安装位置角度差
         float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
         float angle_erro = maghrib_angle(pixel_erro,a);
-        if(GONEID==0x00)
-        {
-            x_err = angle_erro+Camera_Big_gone;
-        }
-        else
-        {
-            x_err = angle_erro+Camera_Small_gone;
-        }
+//        if(GONEID==0x00)
+//        {
+//            x_err = angle_erro+Camera_Big_gone;
+//        }
+//        else
+//        {
+//            x_err = angle_erro+Camera_Small_gone;
+//        }
+        x_err = angle_erro;
         float incrementangle = x_Kp*(x_err - x_err_next) + x_Ki*x_err + x_Kd*(x_err - 2 * x_err_next + x_err_last);
         x_err_last = x_err_next;
         x_err_next = x_err;
@@ -97,7 +98,8 @@ float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)//a用�
     {   //相对于YAW轴，PICTH轴的误差应该由两个部分构成，除了画幅角度差，还应该包括重力补偿角
         float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
         float angle_erro = maghrib_angle(pixel_erro,a);
-        y_err = angle_erro+gravity();
+//        y_err = angle_erro+gravity();
+        y_err = angle_erro;
         float incrementangle = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
         y_err_last = y_err_next;
         y_err_next = y_err;
@@ -160,7 +162,7 @@ void algorithm::get_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float h
     lock_2.unlock();
 }
 //让运算可能用到的值一次性全部加载，防止线程中断占据大量时间
-void algorithm::load_Point(Point2f& p1, Point2f& p2, Point2f& p3, Point2f& p4,float& high)
+void algorithm::load_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float high)
 {
     lock_2.lock();
     p1 = my_arrmorPoint[0];
@@ -185,14 +187,10 @@ void algorithm::serial_read()
 {
 
     while(1)
-    {   string words="wawooooo";
-        int lenth=words.length();
-        char *send=(char *)words.data();
-        int writeLength=write(usbtty.fd,send,lenth);
-        cout<<"串口发送"<<writeLength<<endl;
+    {
         lock_1.lock();
         int readLength = read(usbtty.fd,reversebff,9);
-        cout<<"运行串口接收线程"<<endl;
+//        cout<<"运行串口接收线程"<<endl;
         if(readLength>1)
         {
             cout<<"接收数据长度"<<readLength<<endl;
@@ -245,26 +243,34 @@ void algorithm::serial_translate()
 void algorithm::serial_send()
 {
     CI YAW_angle,PICTH_angle;
-    unsigned char date[9];
+    unsigned char date[13];
     YAW_angle.num  = xangle;
     PICTH_angle.num= yangle;
-    date[0] = YAW_angle.st[0];
-    date[1] = YAW_angle.st[1];
-    date[2] = YAW_angle.st[2];
-    date[3] = YAW_angle.st[3];
-    date[4] = PICTH_angle.st[0];
-    date[5] = PICTH_angle.st[1];
-    date[6] = PICTH_angle.st[2];
-    date[7] = PICTH_angle.st[3];
+    std::cout<<"YAW控制量:"<<YAW_angle.num<<std::endl;
+    std::cout<<"PICTH控制量："<<PICTH_angle.num<<std::endl;
+    date[0] = 0xAA;
+    date[1] = 0xAA;
+    date[2] = 0x04;
+    date[3] = YAW_angle.st[0];
+    date[4] = YAW_angle.st[1];
+    date[5] = YAW_angle.st[2];
+    date[6] = YAW_angle.st[3];
+    date[7] = PICTH_angle.st[0];
+    date[8] = PICTH_angle.st[1];
+    date[9] = PICTH_angle.st[2];
+    date[10] = PICTH_angle.st[3];
     if(xangle<=1&&yangle<=1)
     {
-        date[8] = 0x00;
+        date[11] = 0x00;
     }
     else
     {
-        date[8] = 0x01;
+        date[11] = 0x01;
     }
-    
+    date[12] = 0xBB;
+    int writeLength=write(usbtty.fd,date,13);
+    sleep(1);
+    cout<<writeLength<<endl;
 
 }
 
@@ -292,22 +298,29 @@ void algorithm::dataprocessing()
 {
     while(1)
     {
-        Point2f p1,p2,p3,p4;
+
         float high;//灯条高度用于距离解算
         serial_translate();//翻译串口数据
         if(SYMBOL==true)
         {
-            load_Point(&p1,&p2,&p3,&p4,&high);//从图像处理线程加载装甲板位置信息和灯条长度信息
+
+            Point2f p1 = my_arrmorPoint[0];
+            Point2f p2 = my_arrmorPoint[1];
+            Point2f p3 = my_arrmorPoint[2];
+            Point2f p4 = my_arrmorPoint[3];//从图像处理线程加载装甲板位置信息和灯条长度信息
+            high = light_high;
+            SYMBOL = false;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
             ranging(high);
-            xangle = PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
-            yangle = PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
-            serial_send()
+            xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
+            yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
+            serial_send();
         }
         else
         {
-            
+//            load_Point(p1,p2,p3,p4,high);//从图像处理线程加载装甲板位置信息和灯条长度信息
+//            ranging(high);
+            serial_send();
         }
-        ranging(high);
-        gravity();
+
     }
 }
