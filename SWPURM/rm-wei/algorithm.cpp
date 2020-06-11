@@ -91,6 +91,7 @@ float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)//a用�
         float incrementangle = x_Kp*(x_err - x_err_next) + x_Ki*x_err + x_Kd*(x_err - 2 * x_err_next + x_err_last);
         x_err_last = x_err_next;
         x_err_next = x_err;
+        x_err = x_err_next - incrementangle;//改变当前误差，如果数据没有更新，改变结果直接用于下一次控制
         //cout<<"进入x_pid算法,计算得到目标到摄像头中心的Picth角度差:"<<incrementSpeed<<endl;
         return incrementangle;
     }
@@ -98,11 +99,37 @@ float pidcontral::PID_realize(float p1,float p2,float p3,float p4,int a)//a用�
     {   //相对于YAW轴，PICTH轴的误差应该由两个部分构成，除了画幅角度差，还应该包括重力补偿角
         float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
         float angle_erro = maghrib_angle(pixel_erro,a);
-//        y_err = angle_erro+gravity();
+        // y_err = angle_erro+gravity();
         y_err = angle_erro;
         float incrementangle = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
         y_err_last = y_err_next;
         y_err_next = y_err;
+        y_err = y_err_next - incrementangle;//改变当前误差，如果数据没有更新，改变结果直接用于下一次控制
+        //cout<<"进入y_pid算法且计算得到目标到摄像头中心的Yaw轴角度差:"<<incrementSpeed<<endl;
+        
+        return incrementangle;
+    }
+}
+float pidcontral::PID_imitate(int a )
+{
+    
+    if(a==1)
+    {   
+        float incrementangle = x_Kp*(x_err - x_err_next) + x_Ki*x_err + x_Kd*(x_err - 2 * x_err_next + x_err_last);
+        x_err_last = x_err_next;
+        x_err_next = x_err;
+        x_err = x_err_next-incrementangle;
+        //cout<<"进入x_pid算法,计算得到目标到摄像头中心的Picth角度差:"<<incrementSpeed<<endl;
+        return incrementangle;
+    }
+    else
+    {   
+
+        y_err = angle_erro;
+        float incrementangle = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
+        y_err_last = y_err_next;
+        y_err_next = y_err;
+        y_err = y_err_next-incrementangle;
         //cout<<"进入y_pid算法且计算得到目标到摄像头中心的Yaw轴角度差:"<<incrementSpeed<<endl;
         
         return incrementangle;
@@ -157,9 +184,10 @@ void algorithm::get_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float h
         my_arrmorPoint[3]=p4;
         light_high = high;
         SYMBOL = true;
+        lock_2.unlock();
     }
     //std::cout<<"get point succsee"<<std::endl;
-    lock_2.unlock();
+    
 }
 //让运算可能用到的值一次性全部加载，防止线程中断占据大量时间
 void algorithm::load_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float high)
@@ -269,7 +297,6 @@ void algorithm::serial_send()
     }
     date[12] = 0xBB;
     int writeLength=write(usbtty.fd,date,13);
-    sleep(1);
     cout<<writeLength<<endl;
 
 }
@@ -301,25 +328,29 @@ void algorithm::dataprocessing()
 
         float high;//灯条高度用于距离解算
         serial_translate();//翻译串口数据
-        if(SYMBOL==true)
+        if(SYMBOL==true&&lock_2.try_lock())//这两项有任一不满足则表示本次数据不发生更新
         {
-
+            
             Point2f p1 = my_arrmorPoint[0];
             Point2f p2 = my_arrmorPoint[1];
             Point2f p3 = my_arrmorPoint[2];
             Point2f p4 = my_arrmorPoint[3];//从图像处理线程加载装甲板位置信息和灯条长度信息
             high = light_high;
+            lock_2.unlock();
             SYMBOL = false;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
             ranging(high);
             xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
             yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
             serial_send();
+            delay(250);//将线程挂起1毫秒（单位是1/250毫秒）,这里用于控制发送频率
         }
         else
         {
-//            load_Point(p1,p2,p3,p4,high);//从图像处理线程加载装甲板位置信息和灯条长度信息
-//            ranging(high);
+            //这里补充对输出的滤波，在图像处理线程帧率不够快的基础上补足控制频率
+            xangle = xpid.PID_imitate(1);
+            yangle = ypid.PID_imitate(2);
             serial_send();
+            delay(250);//将线程挂起1毫秒（单位是1/250毫秒）,这里用于控制发送频率
         }
 
     }

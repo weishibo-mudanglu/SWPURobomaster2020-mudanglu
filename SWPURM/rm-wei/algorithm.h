@@ -10,10 +10,10 @@ public:
     void PID_init();
 //    pidcontral& operator=(const pidcontral& another);
     float PID_realize(float p1,float p2,float p3,float p4,int a);
-
+    float PID_imitate(int a);
 private:
-    float x_err;
     float x_err_next;
+    float x_err;
     float x_err_last;
     float x_Kp, x_Ki, x_Kd;
     float y_err;
