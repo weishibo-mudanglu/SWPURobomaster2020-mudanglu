@@ -217,15 +217,19 @@ void algorithm::serial_read()
     while(1)
     {
         lock_1.lock();
-        int readLength = read(usbtty.fd,reversebff,9);
-//        cout<<"运行串口接收线程"<<endl;
+        int readLength = read(usbtty.fd,reversebff,9);        
         if(readLength>1)
         {
             cout<<"接收数据长度"<<readLength<<endl;
             cout<<"接收数据"<<reversebff<<endl;
             cout<<"****************************************"<<endl;
         }
+        else
+        {
+            cout<<"运行一次串口接收线程但没有收到数据"<<endl;
+        }
         lock_1.unlock();
+        usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制接收频率
     }
 
 }
@@ -342,7 +346,7 @@ void algorithm::dataprocessing()
             xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
             yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
             serial_send();
-            delay(250);//将线程挂起1毫秒（单位是1/250毫秒）,这里用于控制发送频率
+            usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
         }
         else
         {
@@ -350,7 +354,7 @@ void algorithm::dataprocessing()
             xangle = xpid.PID_imitate(1);
             yangle = ypid.PID_imitate(2);
             serial_send();
-            delay(250);//将线程挂起1毫秒（单位是1/250毫秒）,这里用于控制发送频率
+            usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
         }
 
     }
