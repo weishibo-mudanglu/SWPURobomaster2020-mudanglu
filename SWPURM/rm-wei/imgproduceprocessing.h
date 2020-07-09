@@ -13,6 +13,8 @@ public:
     imgProduceProcessing(const arrmor& a,const camera& v );
     void ImageProducing();
     void ImageProcessing();
+    void dataprocessing();
+    void serial_read();
     void ImageProducing2ImageProcessing();
 public:
     std::vector<cv::Mat> producedImage;
@@ -20,6 +22,7 @@ public:
     unsigned int producingFrames;
     unsigned int processingFrames;
     arrmor arrmorDection;
+    algorithm algorithms;
     bool BreakFlag;
     camera video;
 };

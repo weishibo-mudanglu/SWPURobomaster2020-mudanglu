@@ -21,14 +21,14 @@ class serial
 {
 public:
     serial();
-    serial(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity);
+//    serial(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity);
     bool serial_open();
     void serial_speed(int speed,termios &opt);
     void set_data(unsigned int dataBit,struct termios &opt);
     void set_stop(unsigned int stop,struct termios &opt);
     void set_parity(char parity,struct termios &opt);
     bool serialParameter();
-    bool serialInit();
+    bool serialInit(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity);
 
 public:
     int                    fd;      //串口的文件句柄

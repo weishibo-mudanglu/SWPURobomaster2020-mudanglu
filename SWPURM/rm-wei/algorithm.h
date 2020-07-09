@@ -7,7 +7,8 @@
 using namespace cv;
 class pidcontral{
 public:
-    void PID_init();
+    void PID_init_YAW();
+    void PID_init_PICTH();
 //    pidcontral& operator=(const pidcontral& another);
     float PID_realize(float p1,float p2,float p3,float p4,int a);
     float PID_imitate(int a);
@@ -26,13 +27,10 @@ private:
 class algorithm{
 public:
     algorithm();
-    algorithm(const serial& b,const pidcontral& c,const pidcontral& d);
+//    algorithm(const serial& b,const pidcontral& c,const pidcontral& d);
     algorithm& operator=(const algorithm& another);
 
     void get_Point(Point2f p1,Point2f p2,Point2f p3,Point2f p4,float high);
-
-    void load_Point(Point2f p1,Point2f p2,Point2f p3,Point2f p4,float high);
-
 
     void ranging(float high);//测距
 
@@ -59,8 +57,9 @@ private:
     pidcontral ypid;
     float xangle,yangle;
     unsigned short int Big_speed,Lit_speed;
-    unsigned char GONEID,COLOR,SYMBOL;
-    mutex lock_1,lock_2;
+    unsigned char GONEID,COLOR;
+    int SYMBOL=10;
+    mutex lock_2,lock_1;
 };
 
 

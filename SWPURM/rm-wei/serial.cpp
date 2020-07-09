@@ -5,14 +5,14 @@ serial::serial()
 
 }
 
-serial::serial(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity)
-{
-    serialDevName= name;
-    this->serialSpeeds=Speeds;
-    this->serialData=    Data;
-    this->serialStop=    Stop;
-    this->serialParity=parity;
-}
+//serial::serial(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity)
+//{
+//    serialDevName= name;
+//    this->serialSpeeds=Speeds;
+//    this->serialData=    Data;
+//    this->serialStop=    Stop;
+//    this->serialParity=parity;
+//}
 
 
 bool serial::serial_open()
@@ -180,8 +180,13 @@ bool serial::serialParameter()
     else        return  true;
 }
 
-bool serial::serialInit()
+bool serial::serialInit(char *name,unsigned int Speeds,unsigned int Data,unsigned int Stop,char parity)
 {
+    serialDevName= name;
+    this->serialSpeeds=Speeds;
+    this->serialData=    Data;
+    this->serialStop=    Stop;
+    this->serialParity=parity;
     //打开串口
     if(!serial_open())
        {

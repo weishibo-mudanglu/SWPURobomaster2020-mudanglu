@@ -124,14 +124,11 @@ float pidcontral::PID_imitate(int a )
     }
     else
     {   
-
-        y_err = angle_erro;
         float incrementangle = y_Kp*(y_err - y_err_next) + y_Ki*x_err + y_Kd*(y_err - 2 * y_err_next + y_err_last);
         y_err_last = y_err_next;
         y_err_next = y_err;
         y_err = y_err_next-incrementangle;
         //cout<<"进入y_pid算法且计算得到目标到摄像头中心的Yaw轴角度差:"<<incrementSpeed<<endl;
-        
         return incrementangle;
     }
 }
@@ -139,7 +136,22 @@ float pidcontral::PID_imitate(int a )
 //{
 //    this->
 //}
-void pidcontral::PID_init()
+void pidcontral::PID_init_YAW()//YAW轴PID初始化
+{
+    x_err = 0.0;
+    x_err_last = 0.0;
+    x_err_next = 0.0;
+    x_Kp = 0.2;
+    x_Ki = 0.015;
+    x_Kd = 0.2;
+    y_err = 0.0;
+    y_err_last = 0.0;
+    y_err_next = 0.0;
+    y_Kp = 0.2;
+    y_Ki = 0.015;
+    y_Kd = 0.2;
+}
+void pidcontral::PID_init_PICTH()//PICTH轴PID初始化
 {
     x_err = 0.0;
     x_err_last = 0.0;
@@ -156,20 +168,27 @@ void pidcontral::PID_init()
 }
 algorithm::algorithm()
 {
-    std::cout<<"运行了algorithm的无参构造函数"<<std::endl;
+    xpid.PID_init_YAW();
+    ypid.PID_init_PICTH();
+    usbtty.serialInit("/dev/ttyUSB0",115200,8,1,'n');
+    std::cout<<"运行了algorithm的无参构造函数,对PID和串口初始化"<<std::endl;
 }
 
-algorithm::algorithm(const serial& b,const pidcontral &c,const pidcontral &d)
-{
-    this->usbtty=b;
-    this->xpid = c;
-    this->ypid = d;
-}
+//algorithm::algorithm(const serial& b,const pidcontral &c,const pidcontral &d)
+//{
+//    this->usbtty=b;
+//    this->xpid = c;
+//    this->ypid = d;
+//    GONEID     = 0x01;//初始化为非标记编码，防止随机初始化误触发自瞄
+//    std::cout<<"*************运行一次算法初始化*********************"<<std::endl;
+//}
 algorithm& algorithm::operator =(const algorithm& another)
 {
-    this->usbtty = another.usbtty;
-    this->xpid = another.xpid;
-    this->ypid = another.ypid;
+//    this->usbtty = another.usbtty;
+//    this->xpid = another.xpid;
+//    this->ypid = another.ypid;
+//    this->SYMBOL = another.SYMBOL;
+      *this = another;
     return *this;
 }
 
@@ -183,28 +202,19 @@ void algorithm::get_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float h
         my_arrmorPoint[2]=p3;
         my_arrmorPoint[3]=p4;
         light_high = high;
-        SYMBOL = true;
+        this->SYMBOL = 1;
+        cout<<"刷新了一次symbol"<<endl;
         lock_2.unlock();
     }
     //std::cout<<"get point succsee"<<std::endl;
     
 }
 //让运算可能用到的值一次性全部加载，防止线程中断占据大量时间
-void algorithm::load_Point(Point2f p1, Point2f p2, Point2f p3, Point2f p4,float high)
-{
-    lock_2.lock();
-    p1 = my_arrmorPoint[0];
-    p2 = my_arrmorPoint[1];
-    p3 = my_arrmorPoint[2];
-    p4 = my_arrmorPoint[3];
-    high = light_high;
-    SYMBOL = false;
-    lock_2.unlock();
-}
+
 
 bool algorithm::colorjudge()
 {
-    if(COLOR==0x01)
+    if(COLOR==0x01)//只要不是蓝色全部默认为红色
         return true;
     else
         return false;
@@ -244,26 +254,34 @@ void algorithm::serial_translate()
         {
             switch (reversebff[2])
             {
-                case 0x01:
-                    GONEID=reversebff[3];
+                case 0x01://申请自瞄命令码
+                    GONEID          = reversebff[3];
                     speed_big.st[0] = reversebff[4];
                     speed_big.st[1] = reversebff[5];
                     speed_lit.st[0] = reversebff[6];
                     speed_lit.st[1] = reversebff[7];
-                    Big_speed = speed_big.num;
-                    Lit_speed = speed_lit.num;
+                    if(reversebff[8]==0xBB)
+                    {
+                        Big_speed = speed_big.num;
+                        Lit_speed = speed_lit.num;
+                    }
                     break;
-                case 0x02:
+                case 0x02://禁止自瞄命令码
                     GONEID=0x02;
                     break;
-                case 0x03:
-                    GONEID=reversebff[3];
+                case 0x03://反馈数据命令码
+                    GONEID          = reversebff[3];
                     speed_big.st[0] = reversebff[4];
                     speed_big.st[1] = reversebff[5];
                     speed_lit.st[0] = reversebff[6];
                     speed_lit.st[1] = reversebff[7];
+                    if(reversebff[8]==0xBB)
+                    {
+                        Big_speed = speed_big.num;
+                        Lit_speed = speed_lit.num;
+                    }
                     break;
-                case 0x05:
+                case 0x05://敌方颜色信息 0x00为红0x01为蓝
                     COLOR = reversebff[3];
                     break;
             }
@@ -329,33 +347,50 @@ void algorithm::dataprocessing()
 {
     while(1)
     {
-
-        float high;//灯条高度用于距离解算
-        serial_translate();//翻译串口数据
-        if(SYMBOL==true&&lock_2.try_lock())//这两项有任一不满足则表示本次数据不发生更新
+        if(GONEID==0x00||GONEID==0x01)//如果枪管信号为已知类型，则进行输出运算
         {
-            
-            Point2f p1 = my_arrmorPoint[0];
-            Point2f p2 = my_arrmorPoint[1];
-            Point2f p3 = my_arrmorPoint[2];
-            Point2f p4 = my_arrmorPoint[3];//从图像处理线程加载装甲板位置信息和灯条长度信息
-            high = light_high;
-            lock_2.unlock();
-            SYMBOL = false;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
-            ranging(high);
-            xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
-            yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
-            serial_send();
-            usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
-        }
-        else
-        {
-            //这里补充对输出的滤波，在图像处理线程帧率不够快的基础上补足控制频率
-            xangle = xpid.PID_imitate(1);
-            yangle = ypid.PID_imitate(2);
-            serial_send();
-            usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
+
+            float high;//灯条高度用于距离解算
+            serial_translate();//翻译串口数据
+            if(SYMBOL==1&&lock_2.try_lock())//这两项有任一不满足则表示本次数据不发生更新
+            {
+
+                Point2f p1 = my_arrmorPoint[0];
+                Point2f p2 = my_arrmorPoint[1];
+                Point2f p3 = my_arrmorPoint[2];
+                Point2f p4 = my_arrmorPoint[3];//从图像处理线程加载装甲板位置信息和灯条长度信息
+                high = light_high;
+                cout<<"p1"<<p1<<endl;
+                cout<<"p2"<<p2<<endl;
+                cout<<"p3"<<p3<<endl;
+                cout<<"p4"<<p4<<endl;
+                cout<<"high"<<high<<endl;
+                lock_2.unlock();
+                SYMBOL = 0;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
+                cout<<"表示调用过一次位置数据"<<endl;
+                ranging(high);
+                xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
+                yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
+                serial_send();
+                usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
+            }
+            else
+            {
+                //这里补充对输出的滤波，在图像处理线程帧率不够快的基础上补足控制频率
+                xangle = xpid.PID_imitate(1);
+                yangle = ypid.PID_imitate(2);
+                serial_send();
+                cout<<"检查了一次symbol标记为false"<<endl;
+                usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
+            }
+
         }
 
+        else//枪管为未知信号则判断未申请自瞄，不进行输出运算
+        {
+            cout<<"检查了一次枪管号编码判断为False"<<endl;
+            usleep(200000);//降低线程循环的频率，代价是延迟打开自瞄
+        }
     }
+
 }
