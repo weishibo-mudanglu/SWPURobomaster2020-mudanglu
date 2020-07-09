@@ -921,7 +921,11 @@ ArmorFindFlag arrmor::ArrmorDection()
 
           //  Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(0,255,0),Scalar(0,0,255),Scalar(255,0,255)};//彩色
             //储存目标装甲板信息到算法对象中
+<<<<<<< HEAD
             // algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.lightLen);
+=======
+            algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.Shortest);
+>>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
             Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0)};
             drawRotatedangle(src_roi,targetArrmorPoint,targetArmorColor,2);
             namedWindow("endsrc");

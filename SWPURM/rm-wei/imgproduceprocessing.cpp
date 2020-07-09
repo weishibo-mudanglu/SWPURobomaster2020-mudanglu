@@ -148,7 +148,10 @@ void imgProduceProcessing::ImageProducing2ImageProcessing()
 
 void imgProduceProcessing::serial_read()
 {
+<<<<<<< HEAD
     
+=======
+>>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
     algorithms.serial_read();
 }
 void imgProduceProcessing::dataprocessing()

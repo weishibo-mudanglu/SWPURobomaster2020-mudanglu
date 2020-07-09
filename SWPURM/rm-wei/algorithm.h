@@ -30,7 +30,11 @@ public:
 //    algorithm(const serial& b,const pidcontral& c,const pidcontral& d);
     algorithm& operator=(const algorithm& another);
 
+<<<<<<< HEAD
     void get_Point(cv::Point2f Points_xy,int high);
+=======
+    void get_Point(Point2f p1,Point2f p2,Point2f p3,Point2f p4,float high);
+>>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
 
     void ranging(float high);//测距
 
@@ -58,7 +62,11 @@ private:
     float xangle,yangle;
     unsigned short int Big_speed,Lit_speed;
     unsigned char GONEID,COLOR;
+<<<<<<< HEAD
     bool SYMBOL=false;
+=======
+    int SYMBOL=10;
+>>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
     mutex lock_2,lock_1;
 };
 

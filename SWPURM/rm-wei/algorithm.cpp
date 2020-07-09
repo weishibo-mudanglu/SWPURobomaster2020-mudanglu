@@ -209,7 +209,8 @@ void algorithm::get_Point(cv::Point2f Points_xy,float high)
     {
         my_arrmorPoint = Points_xy
         light_high = high;
-        SYMBOL = true;
+        this->SYMBOL = 1;
+        cout<<"刷新了一次symbol"<<endl;
         lock_2.unlock();
     }
     //std::cout<<"get point succsee"<<std::endl;
@@ -375,8 +376,13 @@ void algorithm::dataprocessing()
                 SYMBOL = 0;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
                 cout<<"表示调用过一次位置数据"<<endl;
                 ranging(high);
+<<<<<<< HEAD
                 xangle = xpid.PID_realize(my_arrmorPoint.x,1);//计算YAW控制角度
                 yangle = ypid.PID_realize(my_arrmorPoint.y,2);//计算PICTH控制角度
+=======
+                xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
+                yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
+>>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
                 serial_send();
                 usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
             }
