@@ -114,6 +114,8 @@ public:
     RobotType            robot;
     ObjectType       armorType;
     sense_of_roRect armorsense;
+    
+    
 
 };
 
@@ -138,10 +140,11 @@ public:
     Size roiImageSize;//找到的装甲板大小
     cv::Mat src_roi;//  寻找装甲板的ROI大小
     ArmorDescriptor targetArrmor;// 目标装甲板
-    algorithm algorithms;//算法类
     cv::RotatedRect targetArrmor2FindRoi;//
     vector<LightDescriptor> lightCountersRoRect;  // 筛选出来的单个灯条vector
-
+    
+    cv::Point2f    Points_coordinates;
+    float          h_light;//目标装甲板灯条长度
 private:
     ArmorFindFlag _armorFindFlag;
     int _trackCounter; //记录在追踪模式下处理图片的张数，达到max_track_num后变为全局搜索模式

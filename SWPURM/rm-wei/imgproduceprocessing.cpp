@@ -1,4 +1,4 @@
-#include <imgproduceprocessing.h>
+﻿#include <imgproduceprocessing.h>
 #define DATA_IMAGE_SIZE 6
 #define DEBUG_IMAGE_NUM 0
 #define ThreadMuilt 0
@@ -38,9 +38,9 @@ void imgProduceProcessing::ImageProducing()
              {
                  if(video.IGetFrame(producedTemp)==true)
                  {
-                     g_dataImageForProdProc.data[this->producingFrames%DATA_IMAGE_SIZE]=producedTemp;
-                     this->producingFrames++;
-                     g_dataImageForProdProc.imageframe=this->producingFrames-this->processingFrames;
+                     g_dataImageForProdProc.data[producingFrames%DATA_IMAGE_SIZE]=producedTemp;
+                     producingFrames++;
+                     g_dataImageForProdProc.imageframe=producingFrames-processingFrames;
                      usleep(10000);
                  }
                  else
@@ -80,7 +80,7 @@ void imgProduceProcessing::ImageProcessing()
     {
         if(BreakFlag)break;
         while(g_dataImageForProdProc.imageframe==0)if(BreakFlag)break;//等待生产图片完成
-        double time0=saturate_cast<double>(getTickCount());
+//        double time0=saturate_cast<double>(getTickCount());
         cv::Mat src=g_dataImageForProdProc.data[processingFrames%DATA_IMAGE_SIZE];
         processingFrames++;
         g_dataImageForProdProc.imageframe=producingFrames-processingFrames;
@@ -96,11 +96,12 @@ void imgProduceProcessing::ImageProcessing()
         arrmorDection.setImage(src);
         ArmorFindFlag state=ARMOR_NO;
         state=arrmorDection.ArrmorDection();
+        algorithms.get_Point(arrmorDection.Points,arrmorDection.high)
 //        namedWindow("endsrc");
 //        imshow("endsrc",src);
-        double getTime=(saturate_cast<double>(getTickCount())-time0)/getTickFrequency()*1000;
+//        double getTime=(saturate_cast<double>(getTickCount())-time0)/getTickFrequency()*1000;
         cv::waitKey(1);
-        cout << "运行时间为：" << getTime << "ms" <<endl;
+//        cout << "运行时间为：" << getTime << "ms" <<endl;
     }
 
 }
@@ -140,7 +141,17 @@ void imgProduceProcessing::ImageProducing2ImageProcessing()
     arrmorDection.ArrmorDection();
     namedWindow("endsrc");
     imshow("endsrc",src);
-    double getTime=(saturate_cast<double>(getTickCount())-time0)/getTickFrequency()*1000;
+//    double getTime=(saturate_cast<double>(getTickCount())-time0)/getTickFrequency()*1000;
     cv::waitKey(1);
-    cout << "运行时间为：" << getTime << "ms" <<endl;
+//    cout << "运行时间为：" << getTime << "ms" <<endl;
+}
+
+void imgProduceProcessing::serial_read()
+{
+    
+    algorithms.serial_read();
+}
+void imgProduceProcessing::dataprocessing()
+{
+    algorithms.dataprocessing();
 }

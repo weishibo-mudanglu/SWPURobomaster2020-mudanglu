@@ -1,7 +1,7 @@
 #include "arrmor.h"
 #include<algorithm.h>
 #define DEBUG_LIGHT_VECTOR 0  //此宏会定义了关于灯条的各种参数的vector 用与看中间变量
-#define DEBUG_IMAGE_SHOW_A 1
+#define DEBUG_IMAGE_SHOW_A 0//显示感兴趣区域的大小
 #define SHOW_LIGHT_CONTOURS 0
 #define SHOW_LIGHT_PUT_TEXT 0
 #define DEBUG_IMG_ROI_SHOW_SRC 0
@@ -913,11 +913,15 @@ ArmorFindFlag arrmor::ArrmorDection()
             Point2f targetArrmorPoint[4];
 
             targetArrmorTemp.points(targetArrmorPoint);
-
+            //求出目标装甲板的中心像素坐标
+            Points_coordinates.x = (targetArrmorPoint[0].x+targetArrmorPoint[1].x+targetArrmorPoint[2].x+targetArrmorPoint[3].x)/4;
+            Points_coordinates.y = (targetArrmorPoint[0].y+targetArrmorPoint[1].y+targetArrmorPoint[2].y+targetArrmorPoint[3].y)/4;
+            h_light = targetArrmorTemp.lightLen；
             //画出目标装甲板
 
           //  Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(0,255,0),Scalar(0,0,255),Scalar(255,0,255)};//彩色
-            algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.Shortest);
+            //储存目标装甲板信息到算法对象中
+            // algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.lightLen);
             Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0)};
             drawRotatedangle(src_roi,targetArrmorPoint,targetArmorColor,2);
             namedWindow("endsrc");
