@@ -124,7 +124,7 @@ class arrmor
 {
 public:
     arrmor();
-    arrmor(const algorithm& b,Ptr<ml::SVM>& c,Ptr<ml::SVM>& d);
+    arrmor(Ptr<ml::SVM>& c,Ptr<ml::SVM>& d);
     ArmorFindFlag ArrmorDection();
     void judgeArrmorState();
     void setImage(cv::Mat& set_src);
@@ -142,7 +142,7 @@ public:
     ArmorDescriptor targetArrmor;// 目标装甲板
     cv::RotatedRect targetArrmor2FindRoi;//
     vector<LightDescriptor> lightCountersRoRect;  // 筛选出来的单个灯条vector
-    
+    bool colorFlag;
     cv::Point2f    Points_coordinates;
     float          h_light;//目标装甲板灯条长度
 private:

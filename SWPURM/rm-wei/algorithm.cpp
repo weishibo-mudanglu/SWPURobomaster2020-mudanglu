@@ -107,7 +107,7 @@ float pidcontral::PID_realize(float Points_xy,int a)//a用来标记计算x方向
     }
     else
     {   //相对于YAW轴，PICTH轴的误差应该由两个部分构成，除了画幅角度差，还应该包括重力补偿角
-        float pixel_erro = maghrib_pixel(p1,p2,p3,p4);
+        float pixel_erro = maghrib_pixel(Points_xy,a);
         float angle_erro = maghrib_angle(pixel_erro,a);
         // y_err = angle_erro+gravity();
         y_err = angle_erro;
@@ -207,10 +207,10 @@ void algorithm::get_Point(cv::Point2f Points_xy,float high)
 {
     if(lock_2.try_lock())
     {
-        my_arrmorPoint = Points_xy
+        my_arrmorPoint = Points_xy;
         light_high = high;
         this->SYMBOL = 1;
-        cout<<"刷新了一次symbol"<<endl;
+//        cout<<"刷新了一次symbol"<<endl;
         lock_2.unlock();
     }
     //std::cout<<"get point succsee"<<std::endl;
@@ -237,13 +237,13 @@ void algorithm::serial_read()
         int readLength = read(usbtty.fd,reversebff,9);        
         if(readLength>1)
         {
-            cout<<"接收数据长度"<<readLength<<endl;
-            cout<<"接收数据"<<reversebff<<endl;
-            cout<<"****************************************"<<endl;
+//            cout<<"接收数据长度"<<readLength<<endl;
+//            cout<<"接收数据"<<reversebff<<endl;
+//            cout<<"****************************************"<<endl;
         }
         else
         {
-            cout<<"运行一次串口接收线程但没有收到数据"<<endl;
+//            cout<<"运行一次串口接收线程但没有收到数据"<<endl;
         }
         lock_1.unlock();
         usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制接收频率
@@ -326,7 +326,7 @@ void algorithm::serial_send()
     }
     date[12] = 0xBB;
     int writeLength=write(usbtty.fd,date,13);
-    cout<<writeLength<<endl;
+//    cout<<writeLength<<endl;
 
 }
 
@@ -358,33 +358,24 @@ void algorithm::dataprocessing()
         {
 
             float high;//灯条高度用于距离解算
+            cv::Point2f arrmorPoint;
             serial_translate();//翻译串口数据
             if(SYMBOL==1&&lock_2.try_lock())//这两项有任一不满足则表示本次数据不发生更新
             {
 
-                Point2f p1 = my_arrmorPoint[0];
-                Point2f p2 = my_arrmorPoint[1];
-                Point2f p3 = my_arrmorPoint[2];
-                Point2f p4 = my_arrmorPoint[3];//从图像处理线程加载装甲板位置信息和灯条长度信息
+                arrmorPoint = my_arrmorPoint;
+                cout<<my_arrmorPoint<<endl;
                 high = light_high;
-                cout<<"p1"<<p1<<endl;
-                cout<<"p2"<<p2<<endl;
-                cout<<"p3"<<p3<<endl;
-                cout<<"p4"<<p4<<endl;
                 cout<<"high"<<high<<endl;
                 lock_2.unlock();
                 SYMBOL = 0;//表示调用过一次位置数据，如果不发生更新则对输出进行滤波
-                cout<<"表示调用过一次位置数据"<<endl;
+//                cout<<"调用过一次位置数据"<<endl;
                 ranging(high);
-<<<<<<< HEAD
-                xangle = xpid.PID_realize(my_arrmorPoint.x,1);//计算YAW控制角度
-                yangle = ypid.PID_realize(my_arrmorPoint.y,2);//计算PICTH控制角度
-=======
-                xangle = xpid.PID_realize(p1.x,p2.x,p3.x,p4.x,1);//计算YAW控制角度
-                yangle = ypid.PID_realize(p1.y,p2.y,p3.y,p4.y,2);//计算PICTH控制角度
->>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
+                xangle = xpid.PID_realize(arrmorPoint.x,1);//计算YAW控制角度
+                yangle = ypid.PID_realize(arrmorPoint.y,2);//计算PICTH控制角度
+
                 serial_send();
-                usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
+                usleep(2000);//将线程挂起2毫秒（单位是微秒）,这里用于控制发送频率
             }
             else
             {
@@ -392,8 +383,8 @@ void algorithm::dataprocessing()
                 xangle = xpid.PID_imitate(1);
                 yangle = ypid.PID_imitate(2);
                 serial_send();
-                cout<<"检查了一次symbol标记为false"<<endl;
-                usleep(20000);//将线程挂起20毫秒（单位是微秒）,这里用于控制发送频率
+//                cout<<"检查了一次symbol标记为false"<<endl;
+                usleep(2000);//将线程挂起2毫秒（单位是微秒）,这里用于控制发送频率
             }
 
         }

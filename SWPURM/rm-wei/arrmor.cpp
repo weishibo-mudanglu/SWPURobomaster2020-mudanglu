@@ -226,7 +226,7 @@ arrmor::arrmor()
     heightRatio=4;
     enableDigitsRecognize = true; //svm数字识别开关
 }
-arrmor::arrmor(const algorithm& b,Ptr<ml::SVM>& c,Ptr<ml::SVM>& d)
+arrmor::arrmor(Ptr<ml::SVM>& c, Ptr<ml::SVM>& d)
 {
     losed_counter=0;
     find_counter=0;
@@ -238,7 +238,6 @@ arrmor::arrmor(const algorithm& b,Ptr<ml::SVM>& c,Ptr<ml::SVM>& d)
     widthRatio=4;
     heightRatio=4;
     enableDigitsRecognize = true; //svm数字识别开关
-    this->algorithms=b;
     this->SVM_Params=c;
     this->SVM_ArmorTypeParam = d;
 }
@@ -345,7 +344,7 @@ void arrmor::setImage(cv::Mat& set_src)
     vector<Mat> src_roi_channels;
     split(src_roi,src_roi_channels);//  b g r
 #if TARGET_ARRMOR_RED
-    if(algorithms.colorjudge())
+    if(colorFlag)
     {
         subtract(src_roi_channels[0],src_roi_channels[2],src_roi_sub);//subtract  图像相减
     }
@@ -916,16 +915,14 @@ ArmorFindFlag arrmor::ArrmorDection()
             //求出目标装甲板的中心像素坐标
             Points_coordinates.x = (targetArrmorPoint[0].x+targetArrmorPoint[1].x+targetArrmorPoint[2].x+targetArrmorPoint[3].x)/4;
             Points_coordinates.y = (targetArrmorPoint[0].y+targetArrmorPoint[1].y+targetArrmorPoint[2].y+targetArrmorPoint[3].y)/4;
-            h_light = targetArrmorTemp.lightLen；
+            h_light = targetArrmorTemp.lightLen;
             //画出目标装甲板
 
           //  Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(0,255,0),Scalar(0,0,255),Scalar(255,0,255)};//彩色
             //储存目标装甲板信息到算法对象中
-<<<<<<< HEAD
+
             // algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.lightLen);
-=======
-            algorithms.get_Point(targetArrmorPoint[0],targetArrmorPoint[1],targetArrmorPoint[2],targetArrmorPoint[3],targetArrmorTemp.Shortest);
->>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
+
             Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0)};
             drawRotatedangle(src_roi,targetArrmorPoint,targetArmorColor,2);
             namedWindow("endsrc");

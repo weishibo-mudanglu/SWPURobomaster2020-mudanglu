@@ -27,7 +27,7 @@ int main()
     Ptr<ml::SVM> SVM_ArmorTypeParam;
     SVM_Params=ml::SVM::load("svmNum.xml");
 //    class algorithm algorithms(usbtty,x_x,y_y);
-    class arrmor Arrmor(algorithms,SVM_Params,SVM_ArmorTypeParam);
+    class arrmor Arrmor(SVM_Params,SVM_ArmorTypeParam);
     class imgProduceProcessing imgPromachine(Arrmor,video);
 
 #if muiltThread

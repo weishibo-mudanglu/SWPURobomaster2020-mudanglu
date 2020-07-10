@@ -93,10 +93,11 @@ void imgProduceProcessing::ImageProcessing()
     #endif
 
         //arrmorDection.judgeArrmorState();
+        arrmorDection.colorFlag = algorithms.colorjudge();
         arrmorDection.setImage(src);
         ArmorFindFlag state=ARMOR_NO;
         state=arrmorDection.ArrmorDection();
-        algorithms.get_Point(arrmorDection.Points,arrmorDection.high)
+        algorithms.get_Point(arrmorDection.Points_coordinates,arrmorDection.h_light);
 //        namedWindow("endsrc");
 //        imshow("endsrc",src);
 //        double getTime=(saturate_cast<double>(getTickCount())-time0)/getTickFrequency()*1000;
@@ -148,10 +149,6 @@ void imgProduceProcessing::ImageProducing2ImageProcessing()
 
 void imgProduceProcessing::serial_read()
 {
-<<<<<<< HEAD
-    
-=======
->>>>>>> 518ce1677f3c86d870d47a4c976366badf86d8db
     algorithms.serial_read();
 }
 void imgProduceProcessing::dataprocessing()
